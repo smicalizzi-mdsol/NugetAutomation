@@ -13,13 +13,13 @@ $nuget = (get-item ".\tools\NuGet.CommandLine.2.2.1\tools\NuGet.exe")
 $packageIdFormat = "{0}.FakeCode"
 $nuspecTemplate = get-item ".\PackageTemplate.nuspec"
 
-$packageToIgnoreBecauseSomeoneStoleTheNugetIdBOOOO = @(
-    "Sjcl",     # https://www.nuget.org/packages/Sjcl.TypeScript.DefinitelyTyped/ 
-    "Jsbn",     # https://www.nuget.org/packages/Jsbn.TypeScript.DefinitelyTyped/
-    "bigint",   # https://www.nuget.org/packages/BigInt.TypeScript.DefinitelyTyped/
-    "TGrid"     # https://www.nuget.org/packages/TGrid.TypeScript.DefinitelyTyped/
-    "react"     # https://www.nuget.org/packages/React.TypeScript.DefinitelyTyped/
-)
+#$packageToIgnoreBecauseSomeoneStoleTheNugetIdBOOOO = @(
+#    "Sjcl",     # https://www.nuget.org/packages/Sjcl.TypeScript.DefinitelyTyped/ 
+#    "Jsbn",     # https://www.nuget.org/packages/Jsbn.TypeScript.DefinitelyTyped/
+#    "bigint",   # https://www.nuget.org/packages/BigInt.TypeScript.DefinitelyTyped/
+#    "TGrid"     # https://www.nuget.org/packages/TGrid.TypeScript.DefinitelyTyped/
+#    "react"     # https://www.nuget.org/packages/React.TypeScript.DefinitelyTyped/
+#)
 
 # Store git credentials so we can push from AppVeyor
 git config --global credential.helper store
@@ -236,11 +236,11 @@ function Get-MostRecentSavedCommit {
     return $file;
 }
 
-function Get-NewestCommitFromDefinetlyTyped($definetlyTypedFolder, $lastPublishedCommitReference, $projectsToUpdate) {
+function Get-NewestCommitFromFakeCode($fakeCodeFolder, $lastPublishedCommitReference, $projectsToUpdate) {
 
     Write-Host (Update-Submodules)
 
-    pushd $definetlyTypedFolder
+    pushd $fakeCodeFolder
 
     git pull -q origin master | Out-Null
 
@@ -268,7 +268,7 @@ $lastPublishedCommitReference = Get-MostRecentSavedCommit
 $projectsToUpdate = New-Object Collections.Generic.List[string]
 
 # Find updated repositories
-$newCommitHash = Get-NewestCommitFromDefinetlyTyped ".\Definitions" $lastPublishedCommitReference $projectsToUpdate
+$newCommitHash = Get-NewestCommitFromFakeCode ".\Definitions" $lastPublishedCommitReference $projectsToUpdate
 
 if(($newCommitHash | measure).count -ne 1) {
     "*****"
@@ -318,7 +318,7 @@ pushd build
 
     # Some people for some reason claimed the NuGet id ending in this project's convention - arg
     # until we can work with NuGet team or package owner's to remove them we have to exclue them for now...
-    $packageDirectories = $packageDirectories | where { $packageToIgnoreBecauseSomeoneStoleTheNugetIdBOOOO -notcontains $_.Name }
+    #$packageDirectories = $packageDirectories | where { $packageToIgnoreBecauseSomeoneStoleTheNugetIdBOOOO -notcontains $_.Name }
 
     "*****"
     "`$packageDirectories - after filter"
@@ -339,12 +339,11 @@ if($newCommitHash -eq $lastPublishedCommitReference) {
     "No new changes detected"
 }
 elseif($Error.Count -eq 0) {
-
     if($packagesUpdated.Count -gt 0)
     {
         $commitMessage =  "Published NuGet Packages`n`n  - $([string]::join([System.Environment]::NewLine + "  - ", $packagesUpdated))"
     } else {
-        $commitMessage =  "No packages updated but something in the DefinitelyTyped submodule changed - upping the submodule commit"
+        $commitMessage =  "No packages updated but something in the FakeCode submodule changed - upping the submodule commit"
     }
 
     "****"
@@ -360,7 +359,8 @@ elseif($Error.Count -eq 0) {
     }
 
     if($PushGit) {
-        git remote add github https://github.com/smicalizzi-mdsol/FakeCode.git
+        
+        git remote add github https://github.com/smicalizzi-mdsol/NugetAutomation.git
         git push -q github master
         
         if ($LastExitCode -ne 0) {
