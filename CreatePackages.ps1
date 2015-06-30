@@ -352,15 +352,15 @@ elseif($Error.Count -eq 0) {
     "****"
 
     if($CommitLocalGit) {
-        git config user.name AppVeyor
-        git config user.email jason@elegantcode.com
+        git config user.name SMIcalizzi
+        git config user.email smicalizzi@mdsol.com
         git add Definitions
         git add LAST_PUBLISHED_COMMIT
         git commit -m $commitMessage
     }
 
     if($PushGit) {
-        git remote add github https://github.com/DefinitelyTyped/NugetAutomation.git
+        git remote add github https://github.com/smicalizzi-mdsol/FakeCode.git
         git push -q github master
         
         if ($LastExitCode -ne 0) {
