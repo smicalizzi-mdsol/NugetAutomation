@@ -7,10 +7,10 @@ param(
     $specificPackages
     )
 
-# https://github.com/borisyankov/DefinitelyTyped.git
+# https://github.com/smicalizzi-mdsol/FakeCode.git
 
 $nuget = (get-item ".\tools\NuGet.CommandLine.2.2.1\tools\NuGet.exe")
-$packageIdFormat = "{0}.TypeScript.DefinitelyTyped"
+$packageIdFormat = "{0}.FakeCode"
 $nuspecTemplate = get-item ".\PackageTemplate.nuspec"
 
 $packageToIgnoreBecauseSomeoneStoleTheNugetIdBOOOO = @(
@@ -83,7 +83,7 @@ function Configure-NuSpec($spec, $packageId, $newVersion, $pakageName, $dependen
     $metadata.id = $packageId
     $metadata.version = [string]"$newVersion"
     $metadata.tags = "TypeScript JavaScript $pakageName"
-    $metadata.description = "TypeScript Definitions (d.ts) for {0}. Generated based off the DefinitelyTyped repository [git commit: {1}]. http://github.com/DefinitelyTyped" -f $packageName, $newCommitHash
+    $metadata.description = "TypeScript Definitions (d.ts) for {0}. Generated based off the FakeCode repository [git commit: {1}]. http://github.com/FakeCode" -f $packageName, $newCommitHash
 
     if($dependentPackages) {
 
