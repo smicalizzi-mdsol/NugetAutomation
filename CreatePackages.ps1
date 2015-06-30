@@ -301,7 +301,7 @@ elseif($Error.Count -eq 0) {
     "****"
 
     if($CommitLocalGit) {
-        git config user.name SMIcalizzi
+        git config user.name Seth Micalizzi
         git config user.email smicalizzi@mdsol.com
         git add Definitions
         git add LAST_PUBLISHED_COMMIT
