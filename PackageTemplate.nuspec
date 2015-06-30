@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package >
+<package>
   <metadata>
     <id></id>
     <version></version>
@@ -11,8 +11,11 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description></description>
     <releaseNotes></releaseNotes>
-    <copyright>Copyright 2013</copyright>
+    <copyright>Copyright 2015</copyright>
     <tags></tags>
     <dependencies></dependencies>
   </metadata>
+  <files>
+    <file src="..\..\Definitions\FakeRave\bin\Debug\*.dll" target="lib" />
+  </files>
 </package>

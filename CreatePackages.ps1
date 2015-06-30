@@ -3,7 +3,7 @@ param(
     [switch]$CommitLocalGit,
     [switch]$PushGit,
     [switch]$PublishNuget,
-    [switch]$IsTeamCity,
+    #[switch]$IsTeamCity,
     $specificPackages
     )
 
@@ -82,8 +82,8 @@ function Configure-NuSpec($spec, $packageId, $newVersion, $pakageName, $dependen
 
     $metadata.id = $packageId
     $metadata.version = [string]"$newVersion"
-    $metadata.tags = "TypeScript JavaScript $pakageName"
-    $metadata.description = "TypeScript Definitions (d.ts) for {0}. Generated based off the FakeCode repository [git commit: {1}]. http://github.com/FakeCode" -f $packageName, $newCommitHash
+    $metadata.tags = "FakeCode $pakageName"
+    $metadata.description = "Generated based off the FakeCode repository [git commit: {1}]. http://github.com/FakeCode" -f $packageName, $newCommitHash
 
     if($dependentPackages) {
 
@@ -148,17 +148,17 @@ function Create-Package($packagesAdded, $newCommitHash) {
         $packageName = $dir.Name
         $packageId = $packageIdFormat -f $packageName
 
-        $tsFiles = ls $dir -recurse -include *.d.ts | Where-Object {$_.FullName -notMatch "legacy"}
+        #$tsFiles = ls $dir -recurse -include *.d.ts | Where-Object {$_.FullName -notMatch "legacy"}
 
-        if(!($tsFiles)) {
-            return;
-        } else {
+        #if(!($tsFiles)) {
+        #    return;
+        #} else {
 
-            if($IsTeamCity) {
-              "##teamcity[testStarted name='$packageId']"
-            }
+            #if($IsTeamCity) {
+            #  "##teamcity[testStarted name='$packageId']"
+            #}
 
-            try {
+            #try {
 
                 $mostRecentNuspec = (Get-MostRecentNugetSpec $packageId)
 
@@ -167,7 +167,7 @@ function Create-Package($packagesAdded, $newCommitHash) {
                 $packageFolder = "$packageId.$newVersion"
 
                 # Create the directory structure
-                $deployDir = "$packageFolder\Content\Scripts\typings\$packageName"
+                $deployDir = "$packageFolder\NugetPackages\$packageName"
                 Create-Directory $deployDir
                 foreach($file in $tsFiles) {
                     $destFile = $deployDir + $file.FullName.Replace($dir, "")
@@ -191,28 +191,28 @@ function Create-Package($packagesAdded, $newCommitHash) {
 
                 if($PublishNuget) {
                     if($nugetApiKey) {
-                        & $nuget push "$packageFolder.nupkg" -ApiKey $nugetApiKey -NonInteractive
+                        & $nuget push "$packageFolder.nupkg" -Source http://nuget.imedidata.net/F/smicalizzi_test -ApiKey $nugetApiKey -NonInteractive
                     } else {
-                        & $nuget push "$packageFolder.nupkg" -NonInteractive
+                        & $nuget push "$packageFolder.nupkg" -Source http://nuget.imedidata.net/F/smicalizzi_test -NonInteractive
                     }
                 } else {
                     "***** - NOT publishing to Nuget - *****"
                 }
 
                 $packagesAdded.add($packageId);
-            } catch {
-              if($IsTeamCity) {
-                  "##teamcity[message text='Error on package: $packageId' errorDetails='$_' status='ERROR']"
-              } else {
-                throw
-              }
-            }
+            #} catch {
+              #if($IsTeamCity) {
+              #    "##teamcity[message text='Error on package: $packageId' errorDetails='$_' status='ERROR']"
+              #} else {
+                #throw
+              #}
+            #}
 
         }
-        if($IsTeamCity) {
-            "##teamcity[testFinished name='$packageId']"
-        }
-    }
+        #if($IsTeamCity) {
+        #    "##teamcity[testFinished name='$packageId']"
+        #}
+    #}
     END {
     }
 }
