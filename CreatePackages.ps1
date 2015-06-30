@@ -3,7 +3,6 @@ param(
     [switch]$CommitLocalGit,
     [switch]$PushGit,
     [switch]$PublishNuget,
-    #[switch]$IsTeamCity,
     $specificPackages
     )
 
@@ -12,14 +11,6 @@ param(
 $nuget = (get-item ".\tools\NuGet.CommandLine.2.2.1\tools\NuGet.exe")
 $packageIdFormat = "{0}.FakeCode"
 $nuspecTemplate = get-item ".\PackageTemplate.nuspec"
-
-#$packageToIgnoreBecauseSomeoneStoleTheNugetIdBOOOO = @(
-#    "Sjcl",     # https://www.nuget.org/packages/Sjcl.TypeScript.DefinitelyTyped/ 
-#    "Jsbn",     # https://www.nuget.org/packages/Jsbn.TypeScript.DefinitelyTyped/
-#    "bigint",   # https://www.nuget.org/packages/BigInt.TypeScript.DefinitelyTyped/
-#    "TGrid"     # https://www.nuget.org/packages/TGrid.TypeScript.DefinitelyTyped/
-#    "react"     # https://www.nuget.org/packages/React.TypeScript.DefinitelyTyped/
-#)
 
 # Store git credentials so we can push from AppVeyor
 git config --global credential.helper store
@@ -148,71 +139,47 @@ function Create-Package($packagesAdded, $newCommitHash) {
         $packageName = $dir.Name
         $packageId = $packageIdFormat -f $packageName
 
-        #$tsFiles = ls $dir -recurse -include *.d.ts | Where-Object {$_.FullName -notMatch "legacy"}
+        $mostRecentNuspec = (Get-MostRecentNugetSpec $packageId)
 
-        #if(!($tsFiles)) {
-        #    return;
-        #} else {
+        $currentVersion = Get-Last-NuGet-Version $mostRecentNuspec
+        $newVersion = Increment-Version $currentVersion
+        $packageFolder = "$packageId.$newVersion"
 
-            #if($IsTeamCity) {
-            #  "##teamcity[testStarted name='$packageId']"
-            #}
-
-            #try {
-
-                $mostRecentNuspec = (Get-MostRecentNugetSpec $packageId)
-
-                $currentVersion = Get-Last-NuGet-Version $mostRecentNuspec
-                $newVersion = Increment-Version $currentVersion
-                $packageFolder = "$packageId.$newVersion"
-
-                # Create the directory structure
-                $deployDir = "$packageFolder\NugetPackages\$packageName"
-                Create-Directory $deployDir
-                foreach($file in $tsFiles) {
-                    $destFile = $deployDir + $file.FullName.Replace($dir, "")
-                    mkdir (Split-Path $destFile) -Force | Out-Null
-                    cp $file $destFile
-                }
-
-
-                $dependentPackages = @{}
-                Resolve-Dependencies $dir $dependentPackages $packageName
-
-                # setup the nuspec file
-                $currSpecFile = "$packageFolder\$packageId.nuspec"
-                cp $nuspecTemplate $currSpecFile
-                $nuspec = [xml](cat $currSpecFile)
-                "Configuring Nuspec newVersion:$newVersion"
-                Configure-NuSpec $nuspec $packageId $newVersion $pakageName $dependentPackages $newCommitHash
-                $nuspec.Save((get-item $currSpecFile))
-
-                & $nuget pack $currSpecFile
-
-                if($PublishNuget) {
-                    if($nugetApiKey) {
-                        & $nuget push "$packageFolder.nupkg" -Source http://nuget.imedidata.net/F/smicalizzi_test -ApiKey $nugetApiKey -NonInteractive
-                    } else {
-                        & $nuget push "$packageFolder.nupkg" -Source http://nuget.imedidata.net/F/smicalizzi_test -NonInteractive
-                    }
-                } else {
-                    "***** - NOT publishing to Nuget - *****"
-                }
-
-                $packagesAdded.add($packageId);
-            #} catch {
-              #if($IsTeamCity) {
-              #    "##teamcity[message text='Error on package: $packageId' errorDetails='$_' status='ERROR']"
-              #} else {
-                #throw
-              #}
-            #}
-
+        # Create the directory structure
+        $deployDir = "$packageFolder\NugetPackages\$packageName"
+        Create-Directory $deployDir
+        foreach($file in $tsFiles) {
+            $destFile = $deployDir + $file.FullName.Replace($dir, "")
+            mkdir (Split-Path $destFile) -Force | Out-Null
+            cp $file $destFile
         }
-        #if($IsTeamCity) {
-        #    "##teamcity[testFinished name='$packageId']"
-        #}
-    #}
+
+
+        $dependentPackages = @{}
+        Resolve-Dependencies $dir $dependentPackages $packageName
+
+        # setup the nuspec file
+        $currSpecFile = "$packageFolder\$packageId.nuspec"
+        cp $nuspecTemplate $currSpecFile
+        $nuspec = [xml](cat $currSpecFile)
+        "Configuring Nuspec newVersion:$newVersion"
+        Configure-NuSpec $nuspec $packageId $newVersion $pakageName $dependentPackages $newCommitHash
+        $nuspec.Save((get-item $currSpecFile))
+
+        & $nuget pack $currSpecFile
+
+        if($PublishNuget) {
+            if($nugetApiKey) {
+                & $nuget push "$packageFolder.nupkg" -Source http://nuget.imedidata.net/F/smicalizzi_test -ApiKey $nugetApiKey -NonInteractive
+            } else {
+                & $nuget push "$packageFolder.nupkg" -Source http://nuget.imedidata.net/F/smicalizzi_test -NonInteractive
+            }
+        } else {
+            "***** - NOT publishing to Nuget - *****"
+        }
+
+        $packagesAdded.add($packageId);
+    }
     END {
     }
 }
@@ -306,30 +273,13 @@ pushd build
         # first-time run. let's run all the packages.
         $packageDirectories = $allPackageDirectories
     }
-
-    if($IsTeamCity) {
-    "##teamcity[testSuiteStarted name='DefinitlyTyped NugetAutomation']"
-    }
     
     "*****"
-    "`$packageDirectories - before filter"
-    $packageDirectories
-    "*****"
-
-    # Some people for some reason claimed the NuGet id ending in this project's convention - arg
-    # until we can work with NuGet team or package owner's to remove them we have to exclue them for now...
-    #$packageDirectories = $packageDirectories | where { $packageToIgnoreBecauseSomeoneStoleTheNugetIdBOOOO -notcontains $_.Name }
-
-    "*****"
-    "`$packageDirectories - after filter"
+    "`$packageDirectories - current package directories"
     $packageDirectories
     "*****"
 
     $packageDirectories | create-package $packagesUpdated $newCommitHash
-
-    if($IsTeamCity) {
-    "##teamcity[testSuiteFinished name='DefinitlyTyped NugetAutomation']"
-    }
 popd
 
 $newCommitHash | out-file LAST_PUBLISHED_COMMIT -Encoding ascii
