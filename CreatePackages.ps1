@@ -42,6 +42,7 @@ function Create-Directory($name){
 }
 
 
+#This will increment starting from the lowest version number, never going past 10, unless it is the major version.
 function Increment-Version($version){
 
     if(!$version) {
