@@ -1,4 +1,5 @@
 param(
+    $nugetUserName,
     $nugetApiKey,
     [switch]$CommitLocalGit,
     [switch]$PushGit,
@@ -18,9 +19,10 @@ Add-Content "$env:USERPROFILE\.git-credentials" "https://$($env:access_token):x-
 git checkout -q master
 
 function Get-MostRecentNugetSpec($nugetPackageId) {
-    $feeedUrl= "http://packages.nuget.org/v1/FeedService.svc/Packages()?`$filter=Id%20eq%20'$nugetPackageId'&`$orderby=Version%20desc&`$top=1"
+    $feedUrl= "http://nuget.imedidata.net/F/smicalizzi_test/Packages()?`$filter=Id%20eq%20'$nugetPackageId'&`$orderby=Version%20desc&`$top=1"
     $webClient = new-object System.Net.WebClient
-    $feedResults = [xml]($webClient.DownloadString($feeedUrl))
+    $webClient.Credentials = new-object System.Net.NetworkCredential($nugetUserName, $nugetAPIKey) 
+    $feedResults = [xml]($webClient.DownloadString($feedUrl))
     return $feedResults.feed.entry
 }
 
